@@ -1,18 +1,25 @@
 import { State } from '../state.js';
 import { createDigitValidator } from '../createDigitalValidator.js';
+import { loadScores, isTopResult } from '../scoreService.js';
 
 interface GameViewProps {
-  state: State;
-  onGuess: (guess: string) => void;
-  onRestart: () => void;
+  readonly state: State;
+  readonly onGuess: (guess: string) => void;
+  readonly onRestart: () => void;
+  readonly onSaveScore: (name: string, attempts: number, duration: number) => void;
 }
 
-export function renderGameView({ state, onGuess, onRestart }: GameViewProps): HTMLElement {
+export function renderGameView({
+  state,
+  onGuess,
+  onRestart,
+  onSaveScore,
+}: GameViewProps): HTMLElement {
   const container = document.createElement('div');
   container.className = 'game-screen';
 
   const info = document.createElement('p');
-  info.textContent = `Режим: Длина ${state.settings.length}, База ${state.settings.base}`;
+  info.textContent = `Режим: Длина ${state.settings.length}, Base ${state.settings.base}`;
   container.appendChild(info);
 
   const input = document.createElement('input');
@@ -90,25 +97,52 @@ export function renderGameView({ state, onGuess, onRestart }: GameViewProps): HT
   }
 
   if (state.status === 'won') {
+    input.disabled = true;
+    submitBtn.disabled = true;
+
+    const modalOverlay = document.createElement('div');
+    modalOverlay.className = 'modal-overlay';
+
     const winModal = document.createElement('div');
-    winModal.className = 'win-modal';
+    winModal.className = 'win-modal-popup';
 
     const winTitle = document.createElement('h2');
     winTitle.textContent = '🎉 Победа!';
+    winModal.appendChild(winTitle);
 
-    const winDetails = document.createElement('p');
     const duration = Math.floor((Date.now() - state.startTime) / 1000);
+    const winDetails = document.createElement('p');
     winDetails.textContent = `Вы угадали число ${state.secret.toUpperCase()} за ${state.history.length} попыток и ${duration} сек.!`;
+    winModal.appendChild(winDetails);
 
-    const newGameBtn = document.createElement('button');
-    newGameBtn.textContent = 'Играть снова';
-    newGameBtn.addEventListener('click', onRestart);
+    const currentScores = loadScores();
+    const qualifiesForTop = isTopResult(currentScores, state.history.length, duration);
 
-    winModal.append(winTitle, winDetails, newGameBtn);
-    container.appendChild(winModal);
+    if (qualifiesForTop) {
+      onSaveScore('Игрок', state.history.length, duration);
 
-    input.disabled = true;
-    submitBtn.disabled = true;
+      const recordTitle = document.createElement('h3');
+      recordTitle.textContent = '🏆 Результат автоматически сохранен в Топ-10!';
+      recordTitle.style.color = 'var(--color-cow)';
+      winModal.appendChild(recordTitle);
+    }
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = 'В меню настроек';
+    closeBtn.className = 'modal-close-btn';
+    if (qualifiesForTop) {
+      closeBtn.style.backgroundColor = 'var(--color-bull)';
+      closeBtn.style.border = 'none';
+    }
+
+    closeBtn.addEventListener('click', () => {
+      modalOverlay.remove();
+      onRestart();
+    });
+
+    winModal.appendChild(closeBtn);
+    modalOverlay.appendChild(winModal);
+    document.body.appendChild(modalOverlay);
   }
 
   return container;

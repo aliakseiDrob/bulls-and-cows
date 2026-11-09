@@ -2,10 +2,16 @@ import { Settings } from '../state.js';
 import { countPossibleSecrets } from '../countPossibleSecrets.js';
 
 interface SettingsViewProps {
-  onStart: (settings: Settings) => void;
+  readonly onStart: (settings: Settings) => void;
+  readonly onToggleLeaderboard: () => void;
+  readonly isLeaderboardVisible: boolean;
 }
 
-export function renderSettingsView({ onStart }: SettingsViewProps): HTMLElement {
+export function renderSettingsView({
+  onStart,
+  onToggleLeaderboard,
+  isLeaderboardVisible,
+}: SettingsViewProps): HTMLElement {
   const container = document.createElement('div');
   container.className = 'settings-screen';
 
@@ -65,7 +71,6 @@ export function renderSettingsView({ onStart }: SettingsViewProps): HTMLElement 
   };
 
   lengthSelect.addEventListener('change', updateCombinationsHint);
-  baseLabel.appendChild(baseSelect);
   container.appendChild(hint);
 
   updateLengthOptions(10);
@@ -80,6 +85,16 @@ export function renderSettingsView({ onStart }: SettingsViewProps): HTMLElement 
     });
   });
   container.appendChild(startBtn);
+
+  const leaderboardBtn = document.createElement('button');
+  leaderboardBtn.className = 'toggle-leaderboard-btn';
+  leaderboardBtn.textContent = isLeaderboardVisible ? 'Скрыть рекорды' : '🏆 Показать рекорды';
+  leaderboardBtn.style.backgroundColor = 'transparent';
+  leaderboardBtn.style.border = '1px solid var(--border-color)';
+  leaderboardBtn.style.color = 'var(--text-muted)';
+
+  leaderboardBtn.addEventListener('click', onToggleLeaderboard);
+  container.appendChild(leaderboardBtn);
 
   return container;
 }

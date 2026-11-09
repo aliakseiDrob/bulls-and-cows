@@ -21,6 +21,7 @@ export type State = {
   readonly history: readonly HistoryEntry[];
   readonly startTime: number;
   readonly status: Status;
+  readonly showLeaderboard: boolean;
 };
 
 export function createInitialState(settings: Settings): State {
@@ -30,6 +31,14 @@ export function createInitialState(settings: Settings): State {
     history: [],
     startTime: 0,
     status: 'idle',
+    showLeaderboard: false,
+  };
+}
+
+export function toggleLeaderboard(state: State): State {
+  return {
+    ...state,
+    showLeaderboard: !state.showLeaderboard,
   };
 }
 
